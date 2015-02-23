@@ -1,0 +1,132 @@
+<html>
+<head>
+<style>
+button { margin:10px 0px 30px; }
+</style>
+</head>
+
+<body>
+
+<button>Click me 1</button>
+<div id="results"></div>
+
+<script src="jquery-1.11.0.min.js"></script>
+
+<script>
+
+function onDescription(description) {
+    //var content = $('').text(description);
+    $('#results').append(description);
+}
+
+onDescription('hello there folks');
+
+function get(url){
+    return new Promise(function(resolve, reject){
+        var req = new XMLHttpRequest();
+        req.open('GET', url);
+
+        req.onload = function(){
+            if (req.status == 200) resolve(req.response);
+            else reject(Error(req.statusText));
+        }
+
+        req.onerror = function(){
+            reject(Error('Network error'));
+        }
+        req.send();
+    });
+}
+
+function getJSON(url){
+    return get(url).then(JSON.parse).catch(function(error){
+        console.log('Failed on url: ', url, ' for: ', error);
+        throw error;
+    });
+}
+
+// #2)
+// var storyPromise;
+// function getChapter(i){
+//     storyPromise = storyPromise || getJSON('story.json');
+//     return storyPromise.then(function(story){
+//         return getJSON(story.chapterUrls[i]);
+//     })
+// }
+
+$(document).on('click', 'button', function(e){
+    // #1)
+    // getJSON('story.json').then(function(story){
+    //     return getJSON(story.chapterUrls[0]);
+    // }).then(function(chapter1){
+    //     $('#results').append(chapter1.chapter1);
+    // });
+
+
+    // #2)
+    // getChapter(0).then(function(chapter){
+    //     $('#results').append(chapter.chapter1 + '<br><br>');
+    //     return getChapter(1);
+    // }).then(function(chapter){
+    //     $('#results').append(chapter.chapter2);
+    // }).catch(function(error){
+    //     $('#results').append('Failed to load chapter');
+    // });
+
+
+    // #3)
+    // getJSON('story.json').then(function(story){
+    //     return story.chapterUrls.reduce(function(sequence, chapterUrl){
+    //         return sequence.then(function(){
+    //             return getJSON(chapterUrl);
+    //         }).then(function(chapter){
+    //             $('#results').append(chapter.html + '<br><br>');
+    //         });
+    //     }, Promise.resolve());
+    // }).then(function(){
+    //     $('#results').append('All done!');
+    // }).catch(function(error){
+    //     console.error(error);
+    // });
+
+
+    // #4)
+    // getJSON('story.json').then(function(story){
+    //     return Promise.all(
+    //         story.chapterUrls.map(getJSON)
+    //     );
+    // }).then(function(chapters){
+    //     chapters.forEach(function(chapter){
+    //         $('#results').append(chapter.html + '<br><br>');
+    //     });
+    //     $('#results').append('All done!');
+    // }).catch(function(error){
+    //     $('#results').append('Bugger: ', error);
+    // });
+
+
+    // #5)
+    getJSON('story.json').then(function(story){
+        return story.chapterUrls.map(getJSON)
+            .reduce(function(sequence, chapterPromise){
+                    return sequence.then(function(){
+                        return chapterPromise;
+                }).then(function(chapter){
+                    $('#results').append(chapter.html + '<br><br>');
+                });
+            }, Promise.resolve());
+    }).then(function(){
+        $('#results').append('All done!');
+    }).catch(function(error){
+         $('#results').append('Bugger: ', error);
+    });
+
+
+});
+
+</script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,3 @@
+{
+	"html": "In any non-trivial application, figuring out how to organize the functionality of your code into areas of responsibility is often a hard task. We’ve seen how controllers give us a place to put the code that exposes the right data and functions to the view template. But what about the rest of the code we need to support our applications? The most obvious place to put this would be in functions on the controllers. This works fine for small apps and the examples that we’ve seen so far, but it quickly becomes unmanageable in real apps. The controllers would become a dumping ground for everything and anything we need to do. They’d be hard to understand and likely hard to change."
+}

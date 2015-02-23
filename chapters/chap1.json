@@ -1,0 +1,3 @@
+{
+	"html": "Services are singleton (single-instance) objects that carry out the tasks necessary to support your application’s functionality. Angular comes with many services like $loca tion, for interacting with the browser’s location, $route, for switching views based on location (URL) changes, and $http, for communicating with servers. You can, and should, create your own services to do all of the tasks unique to your application. Services can be shared across any controllers that need them. As such, they’re a good mechanism to use when you need to communicate across controllers and share state. Angular’s bundled services start with a $, so while you can name them anything you like, its a good idea to avoid starting them with $ to avoid naming colli‐ sions."
+}
