@@ -1,132 +1,180 @@
 <html>
 <head>
-<style>
-button { margin:10px 0px 30px; }
-</style>
+	<title>Promises</title>
+	<link rel="stylesheet" type="text/css" href="http://necolas.github.io/normalize.css/latest/normalize.css">
+	<style>
+		body { padding:0 20px; }
+		button { margin:20px 0 0; }
+	</style>
 </head>
 
 <body>
 
-<button>Click me 1</button>
-<div id="results"></div>
+	<h1>Promises</h1>
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+	<p>TODO: explain...</p>
 
-<script>
+	<button id="ex1">1) Get chapters</button>
+	<div id="output1"></div>
 
-function onDescription(description) {
-    //var content = $('').text(description);
-    $('#results').append(description);
-}
+	<button id="ex2">2) Get chapters</button>
+	<div id="output2"></div>
 
-onDescription('hello there folks');
+	<button id="ex3">3) Get chapters</button>
+	<div id="output3"></div>
 
-function get(url){
-    return new Promise(function(resolve, reject){
-        var req = new XMLHttpRequest();
-        req.open('GET', url);
+	<button id="ex4">4) Get chapters</button>
+	<div id="output4"></div>
 
-        req.onload = function(){
-            if (req.status == 200) resolve(req.response);
-            else reject(Error(req.statusText));
-        }
-
-        req.onerror = function(){
-            reject(Error('Network error'));
-        }
-        req.send();
-    });
-}
-
-function getJSON(url){
-    return get(url).then(JSON.parse).catch(function(error){
-        console.log('Failed on url: ', url, ' for: ', error);
-        throw error;
-    });
-}
-
-// #2)
-// var storyPromise;
-// function getChapter(i){
-//     storyPromise = storyPromise || getJSON('story.json');
-//     return storyPromise.then(function(story){
-//         return getJSON(story.chapterUrls[i]);
-//     })
-// }
-
-$(document).on('click', 'button', function(e){
-    // #1)
-    // getJSON('story.json').then(function(story){
-    //     return getJSON(story.chapterUrls[0]);
-    // }).then(function(chapter1){
-    //     $('#results').append(chapter1.chapter1);
-    // });
+	<button id="ex5">5) Get chapters</button>
+	<div id="output5"></div>
 
 
-    // #2)
-    // getChapter(0).then(function(chapter){
-    //     $('#results').append(chapter.chapter1 + '<br><br>');
-    //     return getChapter(1);
-    // }).then(function(chapter){
-    //     $('#results').append(chapter.chapter2);
-    // }).catch(function(error){
-    //     $('#results').append('Failed to load chapter');
-    // });
+	<script id="utilities">
+		function $(el){
+			return document.querySelector(el);
+		}
+
+		function get(url){
+			// Return a new promise.
+			return new Promise(function(resolve, reject){
+
+				// Do the usual XHR stuff
+				var req = new XMLHttpRequest();
+				req.open('GET', url);
+
+				req.onload = function(){
+					if (req.status == 200){
+						// Resolve the promise with the response text
+						resolve(req.response);
+					} else {
+						// Otherwise reject with the status text
+						reject(Error(req.statusText));
+					}
+				}
+
+				// Handle network errors
+				req.onerror = function(){
+					reject(Error('Network error'));
+				}
+
+				// Make the request
+				req.send();
+			});
+		}
+
+		function getJSON(url){
+			//When you return a value from a "then" callback the next "then" is called with that value. 
+			// If you return a promise the next "then" waits, called only when that promise succeeds/fails.
+			return get(url).then(JSON.parse).catch(function(error){
+				console.log('Failed on url: ', url, ' for: ', error);
+				throw error;
+			});
+		}
+
+		// #2) Utility function to retrieve a chapter:
+		var storyPromise;
+		function getChapter(i){
+			// Download "story.json" once, then reuse the promise 
+			storyPromise = storyPromise || getJSON('story.json');
+			return storyPromise.then(function(story){
+				return getJSON(story.chapterUrls[i]);
+			})
+		}
+
+		function addTextToPage(content, dest) {
+			var p = document.createElement('p');
+			p.textContent = content;
+			$(dest).appendChild(p);
+		}
+	</script>
 
 
-    // #3)
-    // getJSON('story.json').then(function(story){
-    //     return story.chapterUrls.reduce(function(sequence, chapterUrl){
-    //         return sequence.then(function(){
-    //             return getJSON(chapterUrl);
-    //         }).then(function(chapter){
-    //             $('#results').append(chapter.html + '<br><br>');
-    //         });
-    //     }, Promise.resolve());
-    // }).then(function(){
-    //     $('#results').append('All done!');
-    // }).catch(function(error){
-    //     console.error(error);
-    // });
+	<script id="example1">
+		$('#ex1').addEventListener('click', function(e){
+			// #1) Make AJAX call to get first chapter, then add it to the dom:
+			getJSON('story.json').then(function(story){
+				return getJSON(story.chapterUrls[0]);
+			}).then(function(chapter1){
+				addTextToPage(chapter1.html, '#output1');
+			});
+		});
+	</script>
 
 
-    // #4)
-    // getJSON('story.json').then(function(story){
-    //     return Promise.all(
-    //         story.chapterUrls.map(getJSON)
-    //     );
-    // }).then(function(chapters){
-    //     chapters.forEach(function(chapter){
-    //         $('#results').append(chapter.html + '<br><br>');
-    //     });
-    //     $('#results').append('All done!');
-    // }).catch(function(error){
-    //     $('#results').append('Bugger: ', error);
-    // });
+	<script id="example2">
+		$('#ex2').addEventListener('click', function(e){
+			// #2) Get first, then second chapters...
+			getChapter(0).then(function(chapter){
+				addTextToPage(chapter.html, '#output2');
+				return getChapter(1);
+			}).then(function(chapter){
+				addTextToPage(chapter.html, '#output2');
+			}).catch(function(error){
+				addTextToPage('Failed to load chapter: ' + error, '#output2');
+			});
+		});
+	</script>
 
 
-    // #5)
-    getJSON('story.json').then(function(story){
-        return story.chapterUrls.map(getJSON)
-            .reduce(function(sequence, chapterPromise){
-                    return sequence.then(function(){
-                        return chapterPromise;
-                }).then(function(chapter){
-                    $('#results').append(chapter.html + '<br><br>');
-                });
-            }, Promise.resolve());
-    }).then(function(){
-        $('#results').append('All done!');
-    }).catch(function(error){
-         $('#results').append('Bugger: ', error);
-    });
+	<script id="example3">
+		// #3)
+		$('#ex3').addEventListener('click', function(e){
+			getJSON('story.json').then(function(story){
+			    return story.chapterUrls.reduce(function(sequence, chapterUrl){
+			        return sequence.then(function(){
+			            return getJSON(chapterUrl);
+			        }).then(function(chapter){
+			        	addTextToPage(chapter.html, '#output3');
+			        });
+			    }, Promise.resolve());
+			}).then(function(){
+				addTextToPage('All done!', '#output3');
+			}).catch(function(error){
+				addTextToPage('Error: ' + error, '#output3');
+			});
+		});
+	</script>
 
 
-});
+	<script id="example4">
+		// #4)
+		$('#ex4').addEventListener('click', function(e){
+			getJSON('story.json').then(function(story){
+			    return Promise.all(
+			        story.chapterUrls.map(getJSON)
+			    );
+			}).then(function(chapters){
+			    chapters.forEach(function(chapter){
+			    	addTextToPage(chapter.html, '#output4');
+			    });
+			    addTextToPage('All done!', '#output4');
+			}).catch(function(error){
+				addTextToPage('Error: ' + error, '#output4');
+			});
+		});
+	</script>
 
-</script>
 
+	<script id="example5">
+		// #5)
+		$('#ex5').addEventListener('click', function(e){
+			getJSON('story.json').then(function(story){
+			    return story.chapterUrls.map(getJSON)
+			        .reduce(function(sequence, chapterPromise){
+			                return sequence.then(function(){
+			                    return chapterPromise;
+			            }).then(function(chapter){
+			            	addTextToPage(chapter.html, '#output5');
+			            });
+			        }, Promise.resolve());
+			}).then(function(){
+			    addTextToPage('All done!', '#output5');
+			}).catch(function(error){
+			     addTextToPage('Error: ' + error, '#output5');
+			});
+		});
+	</script>
 
 </body>
-
 </html>
