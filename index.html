@@ -6,6 +6,8 @@
 	<style>
 		body { padding:0 20px; }
 		button { margin:20px 0 0; }
+		.buttons { width:20%; float:left; }
+		#output { width:75%; float:right; }
 	</style>
 </head>
 
@@ -15,21 +17,15 @@
 
 	<p>TODO: explain...</p>
 
-	<button id="ex1">1) Get chapters</button>
-	<div id="output1"></div>
+	 <div class="buttons">
+	 	<button id="ex1">1) Get chapters</button>
+	 	<button id="ex2">2) Get chapters</button>
+	 	<button id="ex3">3) Get chapters</button>
+	 	<button id="ex4">4) Get chapters</button>
+	 	<button id="ex5">5) Get chapters</button>
+	 </div>
 
-	<button id="ex2">2) Get chapters</button>
-	<div id="output2"></div>
-
-	<button id="ex3">3) Get chapters</button>
-	<div id="output3"></div>
-
-	<button id="ex4">4) Get chapters</button>
-	<div id="output4"></div>
-
-	<button id="ex5">5) Get chapters</button>
-	<div id="output5"></div>
-
+	<div id="output"></div>
 
 	<script id="utilities">
 		function $(el){
@@ -83,21 +79,23 @@
 			})
 		}
 
-		function addTextToPage(content, dest) {
+		function addTextToPage(content) {
 			var p = document.createElement('p');
 			p.textContent = content;
-			$(dest).appendChild(p);
+			$('#output').appendChild(p);
 		}
 	</script>
 
 
 	<script id="example1">
 		$('#ex1').addEventListener('click', function(e){
+			$('#output').innerHTML = '';
+
 			// #1) Make AJAX call to get first chapter, then add it to the dom:
 			getJSON('story.json').then(function(story){
 				return getJSON(story.chapterUrls[0]);
 			}).then(function(chapter1){
-				addTextToPage(chapter1.html, '#output1');
+				addTextToPage(chapter1.html);
 			});
 		});
 	</script>
@@ -105,14 +103,16 @@
 
 	<script id="example2">
 		$('#ex2').addEventListener('click', function(e){
+			$('#output').innerHTML = '';
+
 			// #2) Get first, then second chapters...
 			getChapter(0).then(function(chapter){
-				addTextToPage(chapter.html, '#output2');
+				addTextToPage(chapter.html);
 				return getChapter(1);
 			}).then(function(chapter){
-				addTextToPage(chapter.html, '#output2');
+				addTextToPage(chapter.html);
 			}).catch(function(error){
-				addTextToPage('Failed to load chapter: ' + error, '#output2');
+				addTextToPage('Failed to load chapter: ' + error);
 			});
 		});
 	</script>
@@ -121,18 +121,20 @@
 	<script id="example3">
 		// #3)
 		$('#ex3').addEventListener('click', function(e){
+			$('#output').innerHTML = '';
+
 			getJSON('story.json').then(function(story){
 			    return story.chapterUrls.reduce(function(sequence, chapterUrl){
 			        return sequence.then(function(){
 			            return getJSON(chapterUrl);
 			        }).then(function(chapter){
-			        	addTextToPage(chapter.html, '#output3');
+			        	addTextToPage(chapter.html);
 			        });
 			    }, Promise.resolve());
 			}).then(function(){
-				addTextToPage('All done!', '#output3');
+				addTextToPage('All done!');
 			}).catch(function(error){
-				addTextToPage('Error: ' + error, '#output3');
+				addTextToPage('Error: ' + error);
 			});
 		});
 	</script>
@@ -141,17 +143,19 @@
 	<script id="example4">
 		// #4)
 		$('#ex4').addEventListener('click', function(e){
+			$('#output').innerHTML = '';
+
 			getJSON('story.json').then(function(story){
 			    return Promise.all(
 			        story.chapterUrls.map(getJSON)
 			    );
 			}).then(function(chapters){
 			    chapters.forEach(function(chapter){
-			    	addTextToPage(chapter.html, '#output4');
+			    	addTextToPage(chapter.html);
 			    });
-			    addTextToPage('All done!', '#output4');
+			    addTextToPage('All done!');
 			}).catch(function(error){
-				addTextToPage('Error: ' + error, '#output4');
+				addTextToPage('Error: ' + error);
 			});
 		});
 	</script>
@@ -160,19 +164,21 @@
 	<script id="example5">
 		// #5)
 		$('#ex5').addEventListener('click', function(e){
+			$('#output').innerHTML = '';
+
 			getJSON('story.json').then(function(story){
 			    return story.chapterUrls.map(getJSON)
 			        .reduce(function(sequence, chapterPromise){
 			                return sequence.then(function(){
 			                    return chapterPromise;
 			            }).then(function(chapter){
-			            	addTextToPage(chapter.html, '#output5');
+			            	addTextToPage(chapter.html);
 			            });
 			        }, Promise.resolve());
 			}).then(function(){
-			    addTextToPage('All done!', '#output5');
+			    addTextToPage('All done!');
 			}).catch(function(error){
-			     addTextToPage('Error: ' + error, '#output5');
+			     addTextToPage('Error: ' + error);
 			});
 		});
 	</script>
