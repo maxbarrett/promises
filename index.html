@@ -15,14 +15,25 @@
 
 	<h1>Promises</h1>
 
-	<p>TODO: explain...</p>
+	<dl>
+		<dt>Button 1:</dt>
+		<dd>Make an AJAX call to get first chapter, then add it to the dom.</dd>
+		<dt>Button 2:</dt>
+		<dd>Get first and second chapters.</dd>
+		<dt>Button 3:</dt>
+		<dd>Download all 5 chapters in sequence, one after the other.</dd>
+		<dt>Button 4:</dt>
+		<dd>Download chapters in parallel, then add them all to the dom when they've all arrived.</dd>
+		<dt>Button 5:</dt>
+		<dd>Download chapters in parallel, but as each one arrives add it to the page in order.</dd>
+	</dl>
 
 	 <div class="buttons">
-	 	<button id="ex1">1) Get chapters</button>
-	 	<button id="ex2">2) Get chapters</button>
-	 	<button id="ex3">3) Get chapters</button>
-	 	<button id="ex4">4) Get chapters</button>
-	 	<button id="ex5">5) Get chapters</button>
+	 	<button id="ex1">1) Get chapter 1</button>
+	 	<button id="ex2">2) Get chapters 1 &amp; 2</button>
+	 	<button id="ex3">3) Get all in sequence</button>
+	 	<button id="ex4">4) Get all in parallel</button>
+	 	<button id="ex5">5) As 4 but show sooner</button>
 	 </div>
 
 	<div id="output"></div>
@@ -33,7 +44,7 @@
 		}
 
 		function get(url){
-			// Return a new promise.
+			// Return a new promise…
 			return new Promise(function(resolve, reject){
 
 				// Do the usual XHR stuff
@@ -52,6 +63,8 @@
 
 				// Handle network errors
 				req.onerror = function(){
+					// The benefit of Error objects is they capture a stack trace, 
+					// making debugging tools more helpful.
 					reject(Error('Network error'));
 				}
 
@@ -61,10 +74,11 @@
 		}
 
 		function getJSON(url){
-			//When you return a value from a "then" callback the next "then" is called with that value. 
-			// If you return a promise the next "then" waits, called only when that promise succeeds/fails.
+			// When returning a value from a "then" callback the next "then" is called with that value. 
+			// If returning a promise the next "then" waits & called only when that promise succeeds/fails.
 			return get(url).then(JSON.parse).catch(function(error){
 				console.log('Failed on url: ', url, ' for: ', error);
+				//"catch" for logging purposes & rethrow the error
 				throw error;
 			});
 		}
@@ -88,10 +102,9 @@
 
 
 	<script id="example1">
+		// #1) Make AJAX call to get first chapter, then add it to the dom:
 		$('#ex1').addEventListener('click', function(e){
 			$('#output').innerHTML = '';
-
-			// #1) Make AJAX call to get first chapter, then add it to the dom:
 			getJSON('story.json').then(function(story){
 				return getJSON(story.chapterUrls[0]);
 			}).then(function(chapter1){
@@ -105,13 +118,14 @@
 		$('#ex2').addEventListener('click', function(e){
 			$('#output').innerHTML = '';
 
-			// #2) Get first, then second chapters...
+			// #2) Get first, then second chapters…
 			getChapter(0).then(function(chapter){
 				addTextToPage(chapter.html);
 				return getChapter(1);
 			}).then(function(chapter){
 				addTextToPage(chapter.html);
 			}).catch(function(error){
+				// If anything fails, show the error
 				addTextToPage('Failed to load chapter: ' + error);
 			});
 		});
@@ -119,21 +133,32 @@
 
 
 	<script id="example3">
-		// #3)
+		// #3) Download each chapter in sequence, one after the other:
 		$('#ex3').addEventListener('click', function(e){
 			$('#output').innerHTML = '';
 
 			getJSON('story.json').then(function(story){
+
+				// Loop through our chapter urls
+				// array.reduce boils the array down to a single value, which in this case is a promise.
 			    return story.chapterUrls.reduce(function(sequence, chapterUrl){
+
+			    	// "sequence" is Promise.resolve()* the first time around,
+			    	// after that it's whatever we returned from the previous call.
+			    	// So once the last chapter's promise is done…
 			        return sequence.then(function(){
+			        	// fetch the next chapter
 			            return getJSON(chapterUrl);
 			        }).then(function(chapter){
+			        	// and add it to the page
 			        	addTextToPage(chapter.html);
 			        });
-			    }, Promise.resolve());
+			    }, Promise.resolve()); // *see above, this is used as the first argument to the first call of the callback.
+
 			}).then(function(){
 				addTextToPage('All done!');
 			}).catch(function(error){
+				// Catch any error that happened along the way
 				addTextToPage('Error: ' + error);
 			});
 		});
@@ -141,16 +166,24 @@
 
 
 	<script id="example4">
-		// #4)
+		// #4) Download chapters in parallel, then process them when they've all arrived:
 		$('#ex4').addEventListener('click', function(e){
 			$('#output').innerHTML = '';
 
 			getJSON('story.json').then(function(story){
+				// Promise.all takes an array of promises and creates a promise 
+				// that fulfills when all of them successfully complete. 
+				// You get an array of results – whatever the promises fulfilled to –
+				// in the same order as the promises you passed in.
 			    return Promise.all(
+			    	// Map our array of chapter urls to
+    				// an array of chapter json promises
 			        story.chapterUrls.map(getJSON)
 			    );
 			}).then(function(chapters){
+				// Now we have the chapters jsons in order! Loop through…
 			    chapters.forEach(function(chapter){
+			    	// …and add to the page
 			    	addTextToPage(chapter.html);
 			    });
 			    addTextToPage('All done!');
@@ -162,19 +195,31 @@
 
 
 	<script id="example5">
-		// #5)
+		// #5) Download chapters in parallel, when each one arrives add it to the page in order:
 		$('#ex5').addEventListener('click', function(e){
 			$('#output').innerHTML = '';
 
 			getJSON('story.json').then(function(story){
+
+				// Map the array of chapter urls to an array of chapter json promises.
+  				// This makes sure they all download parallel.
 			    return story.chapterUrls.map(getJSON)
+
 			        .reduce(function(sequence, chapterPromise){
-			                return sequence.then(function(){
-			                    return chapterPromise;
+			        	// sequence: previous value, chapterPromise: current value
+
+			        	// Use reduce to chain the promises together,
+      					// adding content to the page for each chapter
+			            return sequence.then(function(){
+
+			            	// Wait for everything in the sequence so far,
+        					// then wait for this chapter to arrive.
+			                return chapterPromise;
+
 			            }).then(function(chapter){
 			            	addTextToPage(chapter.html);
 			            });
-			        }, Promise.resolve());
+			        }, Promise.resolve()); // Object to use as the first argument to the first call of the callback
 			}).then(function(){
 			    addTextToPage('All done!');
 			}).catch(function(error){
@@ -183,5 +228,6 @@
 		});
 	</script>
 
+	<!-- Taken from: http://www.html5rocks.com/en/tutorials/es6/promises/ -->
 </body>
 </html>
